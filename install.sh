@@ -43,7 +43,7 @@ fi
 # --- Step 3: Write the Desktop Entry File Directly to the Desktop ---
 
 echo "Writing desktop entry file to $DESKTOP_DEST..."
-mkdir -p "$HOME/Desktop"
+mkdir -p "~/Desktop"
 cat <<EOF > "$DESKTOP_DEST"
 [Desktop Entry]
 Type=Application
