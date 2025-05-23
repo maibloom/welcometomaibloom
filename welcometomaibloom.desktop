@@ -2,7 +2,7 @@
 Type=Application
 Name=Welcome to Mai BloomOS
 Comment=A walk through Mai Bloom OS
-Exec=/usr/bin/welcometomaibloom
-Icon=/usr/share/icons/hicolor/256x256/apps/welcometomaibloom.png
+Exec=welcometomaibloom
+Icon=/usr/bin/welcometomaibloom/logo.png
 Terminal=false
 Categories=Utility;Application;
