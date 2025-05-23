@@ -3,16 +3,13 @@ set -euo pipefail
 
 # --- Configuration ---
 
-# Where to install the Python script so it will be globally available.
+# Where to install the Python script (so it becomes globally available).
 INSTALL_SCRIPT="/usr/local/bin/welcometomaibloom"
 
-# Directory for the custom logo.
+# Directory to host the custom logo.
 LOGO_INSTALL_DIR="/usr/local/share/welcometomaibloom"
 
-# Temporary location for the .desktop file.
-TEMP_DESKTOP="/tmp/welcometomaibloom.desktop"
-
-# Destination on the user's desktop.
+# Destination for the desktop entry on your Desktop.
 DESKTOP_DEST="$HOME/Desktop/welcometomaibloom.desktop"
 
 # --- Step 0: Verify Source Files ---
@@ -43,10 +40,11 @@ if [ -n "$ICON_ENTRY" ]; then
     sudo cp logo.png "$LOGO_INSTALL_DIR/logo.png"
 fi
 
-# --- Step 3: Write the Desktop Entry File ---
+# --- Step 3: Write the Desktop Entry File Directly to the Desktop ---
 
-echo "Writing desktop entry file..."
-cat <<EOF > "$TEMP_DESKTOP"
+echo "Writing desktop entry file to $DESKTOP_DEST..."
+mkdir -p "$HOME/Desktop"
+cat <<EOF > "$DESKTOP_DEST"
 [Desktop Entry]
 Type=Application
 Name=Welcome to Mai Bloom!
@@ -56,13 +54,3 @@ $ICON_ENTRY
 Terminal=false
 Categories=Utility;Application;
 EOF
-
-# --- Step 4: Install the Desktop Entry ---
-
-echo "Copying the desktop entry to your Desktop..."
-mkdir -p "$HOME/Desktop"
-cp "$TEMP_DESKTOP" "$DESKTOP_DEST"
-
-echo "Installation complete!"
-echo "You can now launch the Mai Bloom Welcome App from the Desktop or by running:"
-echo "   $INSTALL_SCRIPT"
