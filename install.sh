@@ -2,17 +2,18 @@
 set -euo pipefail
 
 sudo chmod +x *
-
 sudo mkdir -p /usr/bin/welcometomaibloom
 sudo mkdir -p /usr/share/applications/
-
 chmod +x welcometomaibloom.desktop
 chmod +x welcometomaibloom.py
-
 sudo cp welcometomaibloom.py /usr/bin/welcometomaibloom
 sudo cp logo.png /usr/bin/welcometomaibloom
 sudo cp welcometomaibloom.desktop /usr/share/applications/
-sudo cp welcometomaibloom.desktop ~/Desktop
+if [[ -n "${SUDO_USER:-}" ]]; then
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    USER_HOME="$HOME"
+fi
+sudo cp welcometomaibloom.desktop "$USER_HOME/Desktop"
 sudo update-desktop-database /usr/share/applications/
-
 echo "Installation completed!"
