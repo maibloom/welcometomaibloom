@@ -10,7 +10,7 @@ INSTALL_SCRIPT="/usr/local/bin/welcometomaibloom"
 LOGO_INSTALL_DIR="/usr/local/share/welcometomaibloom"
 
 # Destination for the desktop entry on your Desktop.
-DESKTOP_DEST="$HOME/Desktop/welcometomaibloom.desktop"
+DESKTOP_DEST="~/Desktop/welcometomaibloom.desktop"
 
 # --- Step 0: Verify Source Files ---
 
