@@ -1,56 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-# --- Configuration ---
+sudo chmod +x *
 
-# Where to install the Python script (so it becomes globally available).
-INSTALL_SCRIPT="/usr/local/bin/welcometomaibloom"
+sudo mkdir -p /usr/bin/welcometomaibloom
+sudo mkdir -p /usr/share/applications/
 
-# Directory to host the custom logo.
-LOGO_INSTALL_DIR="/usr/local/share/welcometomaibloom"
+chmod +x welcometomaibloom.desktop
+chmod +x welcometomaibloom.py
 
-# Destination for the desktop entry on your Desktop.
-DESKTOP_DEST="~/Desktop/welcometomaibloom.desktop"
+sudo cp welcometomaibloom.py /usr/bin/welcometomaibloom
+sudo cp icon.png /usr/bin/welcometomaibloom
+sudo cp welcometomaibloom.desktop /usr/share/applications/
+sudo cp welcometomaibloom.desktop ~/Desktop
+sudo update-desktop-database /usr/share/applications/
 
-# --- Step 0: Verify Source Files ---
-
-if [ ! -f "welcometomaibloom.py" ]; then
-    echo "Error: welcometomaibloom.py not found in the current directory."
-    exit 1
-fi
-
-if [ ! -f "logo.png" ]; then
-    echo "Warning: logo.png not found. The desktop entry will have no custom icon."
-    ICON_ENTRY=""
-else
-    ICON_ENTRY="Icon=$LOGO_INSTALL_DIR/logo.png"
-fi
-
-# --- Step 1: Install the Python Script ---
-
-echo "Installing welcometomaibloom.py to $INSTALL_SCRIPT..."
-sudo cp welcometomaibloom.py "$INSTALL_SCRIPT"
-sudo chmod +x "$INSTALL_SCRIPT"
-
-# --- Step 2: Install the Logo (if provided) ---
-
-if [ -n "$ICON_ENTRY" ]; then
-    echo "Installing logo.png to $LOGO_INSTALL_DIR..."
-    sudo mkdir -p "$LOGO_INSTALL_DIR"
-    sudo cp logo.png "$LOGO_INSTALL_DIR/logo.png"
-fi
-
-# --- Step 3: Write the Desktop Entry File Directly to the Desktop ---
-
-echo "Writing desktop entry file to $DESKTOP_DEST..."
-mkdir -p "~/Desktop"
-cat <<EOF > "$DESKTOP_DEST"
-[Desktop Entry]
-Type=Application
-Name=Welcome to Mai Bloom!
-Comment=Customize your OS with the Mai Bloom Welcome App
-Exec=$INSTALL_SCRIPT
-$ICON_ENTRY
-Terminal=false
-Categories=Utility;Application;
-EOF
+echo "Installation completed!"
