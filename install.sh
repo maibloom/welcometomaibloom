@@ -7,6 +7,7 @@ sudo cp welcometomaibloom.py /usr/local/bin/welcometomaibloom
 sudo cp logo.png /usr/local/bin/welcometomaibloom
 
 sudo cp welcometomaibloom.desktop /usr/share/applications/
+sudo cp welcometomaibloom.desktop ~/Desktop
 sudo update-desktop-database /usr/share/applications/
 
 echo "Installation completed!"
