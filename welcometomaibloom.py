@@ -21,29 +21,29 @@ class WelcomePage(QWizardPage):
         layout.addWidget(lbl)
         self.setLayout(layout)
 
-
 # Page 2: Purpose / Customization
 class PurposePage(QWizardPage):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setTitle("Customize Your OS")
-        self.setSubTitle("For which purpose do you use your computer?")
-        layout = QVBoxLayout()
-
-        info = QLabel("Select the package groups you want to install:")
-        info.setFont(QFont("Arial", 14))
-        info.setWordWrap(True)
-        layout.addWidget(info)
-
-        self.options = ["Education", "Programming", "Office", "Daily Use", "Gaming"]
-        self.checkboxes = {}
-        for opt in self.options:
-            cb = QCheckBox(opt)
-            cb.setFont(QFont("Arial", 12))
-            layout.addWidget(cb)
-            self.checkboxes[opt] = cb
-
-        self.customInput = QLineEdit()
+        super().__init__(parent)                                                                                                                                                              
+        self.setTitle("Customize Your OS")                                                                                                                                                    
+        self.setSubTitle("For which purpose do you use your computer?")                                                                                                                       
+        layout = QVBoxLayout()                                                                                                                                                                
+                                                                                                                                                                                              
+        info = QLabel("Select the package groups you want to install:")                                                                                                                       
+        info.setFont(QFont("Arial", 14))                                                                                                                                                      
+        info.setWordWrap(True)                                                                                                                                                                
+        layout.addWidget(info)                                                                                                                                                                
+                                                                                                                                                                                              
+        # Options shown in the wizard. You can add more if needed.                                                                                                                            
+        self.options = ["Education", "Programming", "Office", "Daily Use", "Gaming"]                                                                                                          
+        self.checkboxes = {}                                                                                                                                                                  
+        for opt in self.options:                                                                                                                                                              
+            cb = QCheckBox(opt)                                                                                                                                                               
+            cb.setFont(QFont("Arial", 12))                                                                                                                                                    
+            layout.addWidget(cb)                                                                                                                                                              
+            self.checkboxes[opt] = cb                                                                                                                                                         
+                                                                                                                                                                                              
+        self.customInput = QLineEdit()                                                                                                                                                        
         self.customInput.setPlaceholderText("Enter additional purpose (optional)")
         layout.addWidget(self.customInput)
 
@@ -56,8 +56,7 @@ class PurposePage(QWizardPage):
             sels.append(extra)
         return sels
 
-
-# Page 3: Installation
+# Page 3: Installation (modified to execute actual commands)
 class InstallationPage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -74,7 +73,7 @@ class InstallationPage(QWizardPage):
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
         self.process.finished.connect(self.on_finished)
-        # new: error logging
+        # Additional error logging (if available)
         if hasattr(self.process, 'errorOccurred'):
             self.process.errorOccurred.connect(
                 lambda err: self.log.append(f"<font color='red'>Process error: {err}</font>")
@@ -84,21 +83,33 @@ class InstallationPage(QWizardPage):
     def initializePage(self):
         self.log.clear()
         self._done = False
-        # safely grab the PurposePage instance
-        pp = getattr(self.wizard(), 'purpose_page', None)
-        if isinstance(pp, PurposePage):
-            selections = pp.getSelections()
-        else:
-            selections = []
 
+        # Retrieve the selections from the PurposePage
+        pp = getattr(self.wizard(), 'purpose_page', None)
+        selections = pp.getSelections() if isinstance(pp, PurposePage) else []
+        
+        # Map selections to their corresponding installation commands
+        cmd_mapping = {
+            "Education": "omnipkg put install maibloom-edupackage",
+            "Programming": "omnipkg put install maibloom-devpackage",
+            "Daily Use": "omnipkg put install maibloom-dailypackage",
+            "Gaming": "omnipkg put install maibloom-gamingpackage"
+        }
+        
         script = ""
         if selections:
             for sel in selections:
-                script += f"echo 'Installing {sel} packages...'; sleep 1; "
+                # Check if a command is defined; if not, notify in the log
+                if sel in cmd_mapping:
+                    command = cmd_mapping[sel]
+                    script += f"echo 'Installing {sel} packages...'; {command}; echo 'Installed {sel} packages.'; sleep 1; "
+                else:
+                    script += f"echo 'No installation command defined for \"{sel}\".'; sleep 1; "
         else:
             script = "echo 'No packages selected. Skipping installation...'; sleep 1; "
         script += "echo 'Installation complete.'"
-
+        
+        # Start the bash process with the generated script
         self.process.start("bash", ["-lc", script])
 
     @pyqtSlot()
@@ -120,8 +131,7 @@ class InstallationPage(QWizardPage):
     def isComplete(self):
         return self._done
 
-
-# Page 4: App Intro
+# Page 4: App Introduction
 class AppIntroductionPage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -144,10 +154,9 @@ class AppIntroductionPage(QWizardPage):
         self.setLayout(layout)
 
     def openApp(self):
-        # replace with your actual command
+        # Replace with the actual command to launch your application
         QProcess.startDetached("gedit")
         QMessageBox.information(self, "X App", "X App has been launched!")
-
 
 # Page 5: Final
 class FinalPage(QWizardPage):
@@ -162,7 +171,6 @@ class FinalPage(QWizardPage):
         layout.addWidget(lbl)
         self.setLayout(layout)
 
-
 def main():
     app = QApplication(sys.argv)
     wiz = QWizard()
@@ -170,14 +178,14 @@ def main():
     wiz.setWizardStyle(QWizard.ModernStyle)
     wiz.setOption(QWizard.NoBackButtonOnStartPage, True)
 
-    # create and keep references to pages
+    # Create and keep references to each page
     wiz.welcome_page = WelcomePage()
     wiz.purpose_page = PurposePage()
     wiz.install_page = InstallationPage()
     wiz.intro_page = AppIntroductionPage()
     wiz.final_page = FinalPage()
 
-    # add them in order
+    # Add pages in order
     wiz.addPage(wiz.welcome_page)
     wiz.addPage(wiz.purpose_page)
     wiz.addPage(wiz.install_page)
@@ -188,5 +196,5 @@ def main():
     wiz.show()
     sys.exit(app.exec_())
 
-
-main()
+if __name__ == "__main__":
+    main()
