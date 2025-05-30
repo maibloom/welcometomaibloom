@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QProcess, pyqtSlot, Qt
 from PyQt5.QtGui import QFont
 
-# Page 1: Welcome
 class WelcomePage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -21,7 +20,6 @@ class WelcomePage(QWizardPage):
         layout.addWidget(lbl)
         self.setLayout(layout)
 
-# Page 2: Purpose / Customization
 class PurposePage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,7 +32,6 @@ class PurposePage(QWizardPage):
         info.setWordWrap(True)
         layout.addWidget(info)
 
-        # Options shown in the wizard. You can add more if needed.
         self.options = ["Education", "Programming", "Office", "Daily Use", "Gaming"]
         self.checkboxes = {}
         for opt in self.options:
@@ -56,7 +53,6 @@ class PurposePage(QWizardPage):
             sels.append(extra)
         return sels
 
-# Page 3: Installation (modified to execute actual commands)
 class InstallationPage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -73,69 +69,104 @@ class InstallationPage(QWizardPage):
         self.process.readyReadStandardOutput.connect(self.handle_stdout)
         self.process.readyReadStandardError.connect(self.handle_stderr)
         self.process.finished.connect(self.on_finished)
-        # Additional error logging (if available)
         if hasattr(self.process, 'errorOccurred'):
             self.process.errorOccurred.connect(
-                lambda err: self.log.append(f"<font color='red'>Process error: {err}</font>")
+                lambda err: self.log.append(f"<font color='red'>Process error: {self.process.errorString()} (Code: {err})</font>")
             )
         self._done = False
 
     def initializePage(self):
-            self.log.clear()
-            self._done = False
+        self.log.clear()
+        self._done = False
+        self.wizard().setButtonLayout([
+            QWizard.Stretch, QWizard.CancelButton
+        ])
 
-            # Retrieve the selections from the PurposePage
-            pp = getattr(self.wizard(), 'purpose_page', None)
-            selections = pp.getSelections() if isinstance(pp, PurposePage) else []
 
-            # Map selections to their corresponding installation commands
-            cmd_mapping = {
-                "Education": "omnipkg put install maibloom-edupackage",
-                "Programming": "omnipkg put install maibloom-devpackage",
-                "Daily Use": "omnipkg put install maibloom-dailypackage",
-                "Gaming": "omnipkg put install maibloom-gamingpackage"
-            }
+        pp = getattr(self.wizard(), 'purpose_page', None)
+        selections = pp.getSelections() if isinstance(pp, PurposePage) else []
 
-            script = ""
-            if selections:
-                for sel in selections:
-                    # Check if a command is defined; if not, notify in the log
-                    if sel in cmd_mapping:
-                        command = cmd_mapping[sel]
-                        script += f"echo 'Installing {sel} packages...'; {command}; echo 'Installed {sel} packages.'; sleep 1; "
-                    else:
-                        script += f"echo 'No installation command defined for \"{sel}\".'; sleep 1; "
-            else:
-                script = "echo 'No packages selected. Skipping installation...'; sleep 1; "
-            script += "echo 'Installation complete.'"
+        cmd_mapping = {
+            "Education": "omnipkg put install maibloom-edupackage",
+            "Programming": "omnipkg put install maibloom-devpackage",
+            "Office": "omnipkg put install maibloom-officepackage",
+            "Daily Use": "omnipkg put install maibloom-dailypackage",
+            "Gaming": "omnipkg put install maibloom-gamingpackage"
+        }
 
-            cmd = ["pkexec", "bash", "-c", script]
+        script_parts = []
+        if selections:
+            for sel in selections:
+                if sel in cmd_mapping:
+                    command = cmd_mapping[sel]
+                    script_parts.append(f"echo '> Installing {sel} packages...'")
+                    script_parts.append(command)
+                    script_parts.append(f"echo '> Finished installing {sel} packages.'")
+                    script_parts.append("sleep 1")
+                else:
+                    script_parts.append(f"echo '> No installation command defined for \"{sel}\". Skipping.'")
+                    script_parts.append("sleep 1")
+        else:
+            script_parts.append("echo '> No packages selected. Skipping installation...'")
+            script_parts.append("sleep 1")
+        
+        script_parts.append("echo ''")
+        script_parts.append("echo 'Installation phase complete.'")
+        
+        full_script = "; ".join(script_parts)
+        
+        self.log.append("Starting package installation process...\n")
+        self.log.append(f"Effective script to be run via pkexec bash -c \"{full_script}\"\n")
 
-            process = QProcess(self)
-            process.startDetached(cmd[0], cmd[1:])
 
+        command_list = ["pkexec", "bash", "-c", full_script]
+        self.process.start(command_list[0], command_list[1:])
 
 
     @pyqtSlot()
     def handle_stdout(self):
-        out = bytes(self.process.readAllStandardOutput()).decode()
-        self.log.append(out)
+        data = self.process.readAllStandardOutput()
+        try:
+            out = bytes(data).decode(errors='replace').strip()
+        except Exception as e:
+            out = f"[Error decoding stdout: {e}]"
+        if out:
+            self.log.append(out)
 
     @pyqtSlot()
     def handle_stderr(self):
-        err = bytes(self.process.readAllStandardError()).decode()
-        self.log.append(f"<font color='red'>{err}</font>")
+        data = self.process.readAllStandardError()
+        try:
+            err = bytes(data).decode(errors='replace').strip()
+        except Exception as e:
+            err = f"[Error decoding stderr: {e}]"
+        if err:
+            self.log.append(f"<font color='red'>{err}</font>")
 
-    @pyqtSlot()
-    def on_finished(self):
-        self.log.append("<br><font color='green'>Installation process finished.</font>")
+    @pyqtSlot(int, QProcess.ExitStatus)
+    def on_finished(self, exitCode, exitStatus):
+        self.log.append("")
+        if exitStatus == QProcess.NormalExit and exitCode == 0:
+            self.log.append("<font color='green'>Installation process finished successfully.</font>")
+        elif exitStatus == QProcess.CrashExit:
+            self.log.append(f"<font color='red'>Installation process crashed.</font>")
+        else:
+            self.log.append(f"<font color='red'>Installation process finished with exit code: {exitCode}.</font>")
+        
         self._done = True
         self.completeChanged.emit()
+        self.wizard().setButtonLayout([
+            QWizard.Stretch, QWizard.BackButton, QWizard.NextButton, QWizard.FinishButton, QWizard.CancelButton
+        ])
+
 
     def isComplete(self):
         return self._done
+    
+    def nextId(self) -> int:
+        return MaiBloomWizard.Page_Intro
 
-# Page 4: App Introduction
+
 class AppIntroductionPage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -158,11 +189,12 @@ class AppIntroductionPage(QWizardPage):
         self.setLayout(layout)
 
     def openApp(self):
-        # Replace with the actual command to launch your application
-        QProcess.startDetached("gedit")
+        QProcess.startDetached("gedit", [])
         QMessageBox.information(self, "X App", "X App has been launched!")
+    
+    def nextId(self) -> int:
+        return MaiBloomWizard.Page_Final
 
-# Page 5: Final
 class FinalPage(QWizardPage):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -175,28 +207,38 @@ class FinalPage(QWizardPage):
         layout.addWidget(lbl)
         self.setLayout(layout)
 
+    def nextId(self) -> int:
+        return -1
+
+
+class MaiBloomWizard(QWizard):
+    Page_Welcome, Page_Purpose, Page_Install, Page_Intro, Page_Final = range(5)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Mai Bloom Welcome App")
+        self.setWizardStyle(QWizard.ModernStyle)
+        self.setOption(QWizard.NoBackButtonOnStartPage, True)
+
+        self.welcome_page = WelcomePage()
+        self.purpose_page = PurposePage()
+        self.install_page = InstallationPage()
+        self.intro_page = AppIntroductionPage()
+        self.final_page = FinalPage()
+
+        self.setPage(self.Page_Welcome, self.welcome_page)
+        self.setPage(self.Page_Purpose, self.purpose_page)
+        self.setPage(self.Page_Install, self.install_page)
+        self.setPage(self.Page_Intro, self.intro_page)
+        self.setPage(self.Page_Final, self.final_page)
+        
+        self.setStartId(self.Page_Welcome)
+        self.resize(700, 500)
+
+
 def main():
     app = QApplication(sys.argv)
-    wiz = QWizard()
-    wiz.setWindowTitle("Mai Bloom Welcome App")
-    wiz.setWizardStyle(QWizard.ModernStyle)
-    wiz.setOption(QWizard.NoBackButtonOnStartPage, True)
-
-    # Create and keep references to each page
-    wiz.welcome_page = WelcomePage()
-    wiz.purpose_page = PurposePage()
-    wiz.install_page = InstallationPage()
-    wiz.intro_page = AppIntroductionPage()
-    wiz.final_page = FinalPage()
-
-    # Add pages in order
-    wiz.addPage(wiz.welcome_page)
-    wiz.addPage(wiz.purpose_page)
-    wiz.addPage(wiz.install_page)
-    wiz.addPage(wiz.intro_page)
-    wiz.addPage(wiz.final_page)
-
-    wiz.resize(600, 400)
+    wiz = MaiBloomWizard()
     wiz.show()
     sys.exit(app.exec_())
 
