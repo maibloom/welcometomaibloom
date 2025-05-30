@@ -24,26 +24,26 @@ class WelcomePage(QWizardPage):
 # Page 2: Purpose / Customization
 class PurposePage(QWizardPage):
     def __init__(self, parent=None):
-        super().__init__(parent)                                                                                                                                                              
-        self.setTitle("Customize Your OS")                                                                                                                                                    
-        self.setSubTitle("For which purpose do you use your computer?")                                                                                                                       
-        layout = QVBoxLayout()                                                                                                                                                                
-                                                                                                                                                                                              
-        info = QLabel("Select the package groups you want to install:")                                                                                                                       
-        info.setFont(QFont("Arial", 14))                                                                                                                                                      
-        info.setWordWrap(True)                                                                                                                                                                
-        layout.addWidget(info)                                                                                                                                                                
-                                                                                                                                                                                              
-        # Options shown in the wizard. You can add more if needed.                                                                                                                            
-        self.options = ["Education", "Programming", "Office", "Daily Use", "Gaming"]                                                                                                          
-        self.checkboxes = {}                                                                                                                                                                  
-        for opt in self.options:                                                                                                                                                              
-            cb = QCheckBox(opt)                                                                                                                                                               
-            cb.setFont(QFont("Arial", 12))                                                                                                                                                    
-            layout.addWidget(cb)                                                                                                                                                              
-            self.checkboxes[opt] = cb                                                                                                                                                         
-                                                                                                                                                                                              
-        self.customInput = QLineEdit()                                                                                                                                                        
+        super().__init__(parent)
+        self.setTitle("Customize Your OS")
+        self.setSubTitle("For which purpose do you use your computer?")
+        layout = QVBoxLayout()
+
+        info = QLabel("Select the package groups you want to install:")
+        info.setFont(QFont("Arial", 14))
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # Options shown in the wizard. You can add more if needed.
+        self.options = ["Education", "Programming", "Office", "Daily Use", "Gaming"]
+        self.checkboxes = {}
+        for opt in self.options:
+            cb = QCheckBox(opt)
+            cb.setFont(QFont("Arial", 12))
+            layout.addWidget(cb)
+            self.checkboxes[opt] = cb
+
+        self.customInput = QLineEdit()
         self.customInput.setPlaceholderText("Enter additional purpose (optional)")
         layout.addWidget(self.customInput)
 
@@ -81,36 +81,40 @@ class InstallationPage(QWizardPage):
         self._done = False
 
     def initializePage(self):
-        self.log.clear()
-        self._done = False
+            self.log.clear()
+            self._done = False
 
-        # Retrieve the selections from the PurposePage
-        pp = getattr(self.wizard(), 'purpose_page', None)
-        selections = pp.getSelections() if isinstance(pp, PurposePage) else []
-        
-        # Map selections to their corresponding installation commands
-        cmd_mapping = {
-            "Education": "omnipkg put install maibloom-edupackage",
-            "Programming": "omnipkg put install maibloom-devpackage",
-            "Daily Use": "omnipkg put install maibloom-dailypackage",
-            "Gaming": "omnipkg put install maibloom-gamingpackage"
-        }
-        
-        script = ""
-        if selections:
-            for sel in selections:
-                # Check if a command is defined; if not, notify in the log
-                if sel in cmd_mapping:
-                    command = cmd_mapping[sel]
-                    script += f"echo 'Installing {sel} packages...'; {command}; echo 'Installed {sel} packages.'; sleep 1; "
-                else:
-                    script += f"echo 'No installation command defined for \"{sel}\".'; sleep 1; "
-        else:
-            script = "echo 'No packages selected. Skipping installation...'; sleep 1; "
-        script += "echo 'Installation complete.'"
-        
-        # Start the bash process with the generated script
-        self.process.start("bash", ["-lc", script])
+            # Retrieve the selections from the PurposePage
+            pp = getattr(self.wizard(), 'purpose_page', None)
+            selections = pp.getSelections() if isinstance(pp, PurposePage) else []
+
+            # Map selections to their corresponding installation commands
+            cmd_mapping = {
+                "Education": "omnipkg put install maibloom-edupackage",
+                "Programming": "omnipkg put install maibloom-devpackage",
+                "Daily Use": "omnipkg put install maibloom-dailypackage",
+                "Gaming": "omnipkg put install maibloom-gamingpackage"
+            }
+
+            script = ""
+            if selections:
+                for sel in selections:
+                    # Check if a command is defined; if not, notify in the log
+                    if sel in cmd_mapping:
+                        command = cmd_mapping[sel]
+                        script += f"echo 'Installing {sel} packages...'; {command}; echo 'Installed {sel} packages.'; sleep 1; "
+                    else:
+                        script += f"echo 'No installation command defined for \"{sel}\".'; sleep 1; "
+            else:
+                script = "echo 'No packages selected. Skipping installation...'; sleep 1; "
+            script += "echo 'Installation complete.'"
+
+            cmd = ["pkexec", "bash", "-c", script]
+
+            process = QProcess(self)
+            process.startDetached(cmd[0], cmd[1:])
+
+
 
     @pyqtSlot()
     def handle_stdout(self):
