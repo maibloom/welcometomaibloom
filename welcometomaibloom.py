@@ -87,11 +87,11 @@ class InstallationPage(QWizardPage):
         selections = pp.getSelections() if isinstance(pp, PurposePage) else []
 
         cmd_mapping = {
-            "Education": "omnipkg put install maibloom-edupackage",
-            "Programming": "omnipkg put install maibloom-devpackage",
-            "Office": "omnipkg put install maibloom-officepackage",
-            "Daily Use": "omnipkg put install maibloom-dailypackage",
-            "Gaming": "omnipkg put install maibloom-gamingpackage"
+            "Education": "sudo /usr/local/bin/omnipkg put install maibloom-edupackage",
+            "Programming": "sudo /usr/local/bin/omnipkg put install maibloom-devpackage",
+            "Office": "sudo /usr/local/bin/omnipkg put install maibloom-officepackage",
+            "Daily Use": "sudo /usr/local/bin/omnipkg put install maibloom-dailypackage",
+            "Gaming": "sudo /usr/local/bin/omnipkg put install maibloom-gamingpackage"
         }
 
         script_parts = []
