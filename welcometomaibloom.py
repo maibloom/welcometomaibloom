@@ -20,8 +20,18 @@ class App(ctk.CTk):
         self.title("Welcome to Mai Bloom OS")
         self.geometry("800x600")
         self.selected_packages = {}
+
+        # Configure the main window's grid so that its content expands and sticks.
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # Create a container that fills the window.
         container = ctk.CTkFrame(self)
         container.pack(side="top", fill="both", expand=True)
+        # Configure container's grid to force the frames to expand.
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+        
         self.frames = {}
 
         for F in (IntroPage, CommandPage, FinalPage):
@@ -191,7 +201,7 @@ class FinalPage(ctk.CTkFrame):
 
     def learn_more(self):
         import webbrowser
-        webbrowser.open("https://example.com/maibloom")
+        webbrowser.open("https://maibloom.github.io")
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("light")
