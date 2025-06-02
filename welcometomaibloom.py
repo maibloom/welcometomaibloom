@@ -1,11 +1,10 @@
 import sys
-import webbrowser
 from PyQt5.QtWidgets import (
     QApplication, QWizard, QWizardPage, QVBoxLayout, QHBoxLayout,
     QLabel, QCheckBox, QPushButton, QMessageBox, QInputDialog, QLineEdit, QTextEdit
 )
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt, QProcess, QTimer
+from PyQt5.QtCore import Qt, QProcess
 
 CMD_MAPPING = {
     "Education": "sudo -S omnipkg put install maibloom-edupackage",
@@ -13,6 +12,14 @@ CMD_MAPPING = {
     "Office": "sudo -S omnipkg put install maibloom-officepackage",
     "Daily Use": "sudo -S omnipkg put install maibloom-dailypackage",
     "Gaming": "sudo -S omnipkg put install maibloom-gamingpackage"
+}
+
+OUTPUT_MAPPING = {
+    "Education": "edupackages",
+    "Programming": "devpackages",
+    "Office": "officepackages",
+    "Daily Use": "dailypackages",
+    "Gaming": "gamingpackages"
 }
 
 class IntroPage(QWizardPage):
@@ -36,60 +43,48 @@ class IntroPage(QWizardPage):
 class CommandPage(QWizardPage):
     def __init__(self):
         super().__init__()
-        self.setTitle("Executing Commands")
-        self.setSubTitle("Selected commands will execute and output will be shown in real time.")
+        self.setTitle("Installing Packages")
+        self.setSubTitle("The installation command will now execute and output will be shown in real time.")
         layout = QVBoxLayout()
         self.output_view = QTextEdit()
         self.output_view.setReadOnly(True)
         layout.addWidget(self.output_view)
         self.setLayout(layout)
         self.process = None
-        self.command_list = []
-        self.current_command_index = 0
         self.password = None
 
     def initializePage(self):
         wizard = self.wizard()
-        self.command_list = []
+        selected_packages = []
         for option, cb in wizard.page(0).checkboxes.items():
             if cb.isChecked():
-                self.command_list.append(CMD_MAPPING[option])
-        if self.command_list:
-            self.password, ok = QInputDialog.getText(
-                self, "Sudo Password", "Please enter your sudo password:",
-                QLineEdit.Password
-            )
-            if not ok or not self.password:
-                self.output_view.setPlainText("Sudo password not provided. Aborting execution.")
-                return
-        else:
-            self.output_view.setPlainText("No options were selected. Nothing to execute.")
+                selected_packages.append(OUTPUT_MAPPING[option])
+        if not selected_packages:
+            self.output_view.setPlainText("No packages were selected. Nothing to install.")
             return
 
-        self.current_command_index = 0
-        QTimer.singleShot(100, self.execute_next_command)
-
-    def execute_next_command(self):
-        if self.current_command_index >= len(self.command_list):
-            self.output_view.append("\nAll commands executed.")
+        package_str = " ".join(selected_packages)
+        full_command = f"sudo -S omnipkg put installed {package_str}"
+        self.output_view.append(f"Executing: {full_command}\n")
+        self.password, ok = QInputDialog.getText(
+            self, "Sudo Password", "Please enter your sudo password:", QLineEdit.Password)
+        if not ok or not self.password:
+            self.output_view.append("Sudo password not provided. Aborting execution.")
             return
-        cmd = self.command_list[self.current_command_index]
-        self.output_view.append(f"\nExecuting: {cmd}\n")
+
         self.process = QProcess(self)
         self.process.setProcessChannelMode(QProcess.MergedChannels)
         self.process.readyRead.connect(self.handle_output)
         self.process.finished.connect(self.command_finished)
         self.process.started.connect(lambda: self.process.write((self.password + "\n").encode()))
-        self.process.start(cmd)
+        self.process.start(full_command)
 
     def handle_output(self):
         data = self.process.readAllStandardOutput().data().decode("utf-8")
         self.output_view.append(data)
 
     def command_finished(self, exitCode, exitStatus):
-        self.output_view.append(f"\nFinished: {self.command_list[self.current_command_index]}\n")
-        self.current_command_index += 1
-        self.execute_next_command()
+        self.output_view.append("\nInstallation command finished.")
 
 class FinalPage(QWizardPage):
     def __init__(self):
@@ -114,11 +109,12 @@ class FinalPage(QWizardPage):
         self.setLayout(layout)
         self.exit_button.clicked.connect(self.exit_app)
         self.learn_more_button.clicked.connect(self.learn_more)
-        
+
     def exit_app(self):
         QApplication.quit()
-    
+
     def learn_more(self):
+        import webbrowser
         webbrowser.open("https://example.com/maibloom")
         QMessageBox.information(self, "Learn More", "Visit the Mai Bloom OS website for more details!")
 
