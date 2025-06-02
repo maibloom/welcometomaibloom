@@ -4,16 +4,14 @@ from tkinter import simpledialog
 import subprocess
 import threading
 import queue
-import logo  # This module should provide a function "get_logo()" returning a PIL.Image
-from PIL import Image
 
-# Define our output mapping
+# Mapping for output names.
 OUTPUT_MAPPING = {
-    "Education": "edupackages",
-    "Programming": "devpackages",
-    "Office": "officepackages",
-    "Daily Use": "dailypackages",
-    "Gaming": "gamingpackages"
+    "Education": "maibloom-edupackages",
+    "Programming": "maibloom-edupackages",
+    "Office": "maibloom-edupackages",
+    "Daily Use": "maibloom-edupackages",
+    "Gaming": "maibloom-edupackages"
 }
 
 class App(ctk.CTk):
@@ -43,11 +41,9 @@ class IntroPage(ctk.CTkFrame):
         super().__init__(parent)
         self.controller = controller
 
-        # Load the logo image from logo.py (assumes get_logo() returns a PIL.Image)
-        pil_image = logo.get_logo()
-        # Create a CTkImage from the PIL image; adjust size as needed.
-        self.ctk_logo = ctk.CTkImage(light_image=pil_image, size=(150, 150))
-        self.logo_label = ctk.CTkLabel(self, image=self.ctk_logo, text="")
+        # Load the logo from the actual file "logo.png"
+        self.logo_image = tk.PhotoImage(file="logo.png")
+        self.logo_label = ctk.CTkLabel(self, image=self.logo_image, text="")
         self.logo_label.pack(pady=20)
 
         self.title_label = ctk.CTkLabel(self, text="Welcome to Mai Bloom OS Setup", font=("Arial", 20))
@@ -88,7 +84,7 @@ class CommandPage(ctk.CTkFrame):
         self.subtitle_label = ctk.CTkLabel(self, text="Installation output:", font=("Arial", 14))
         self.subtitle_label.pack(pady=10)
 
-        # Use a CTkTextbox (available in customtkinter 5.0+) – if unavailable, you may replace with a tk.Text widget
+        # CTkTextbox is used to show the output.
         self.text_output = ctk.CTkTextbox(self, width=700, height=300)
         self.text_output.pack(padx=20, pady=20)
 
@@ -112,6 +108,7 @@ class CommandPage(ctk.CTkFrame):
             self.next_button.configure(state="normal")
             return
         packages_str = " ".join(selected_options)
+        # Build the command as requested.
         self.command = f"sudo -S omnipkg put installed {packages_str}"
         self.text_output.insert(tk.END, f"Executing: {self.command}\n")
         self.password = simpledialog.askstring("Sudo Password", "Please enter your sudo password:", show="*")
@@ -122,7 +119,6 @@ class CommandPage(ctk.CTkFrame):
         self.start_process()
 
     def start_process(self):
-        # Start the subprocess with shell=True so the full command is interpreted by the shell.
         self.process = subprocess.Popen(
             self.command,
             shell=True,
@@ -142,10 +138,8 @@ class CommandPage(ctk.CTkFrame):
         self.after(100, self.poll_queue)
 
     def read_process_output(self):
-        # Read stdout line by line and put into the output queue
         for line in self.process.stdout:
             self.output_queue.put(line)
-        # Collect any remaining stderr
         err = self.process.stderr.read()
         if err:
             self.output_queue.put(err)
@@ -182,10 +176,9 @@ class FinalPage(ctk.CTkFrame):
         )
         self.subtitle_label.pack(pady=10)
 
-        # Load the logo from logo.py
-        pil_image = logo.get_logo()
-        self.ctk_logo = ctk.CTkImage(light_image=pil_image, size=(100, 100))
-        self.logo_label = ctk.CTkLabel(self, image=self.ctk_logo, text="")
+        # Load the logo from the file "logo.png"
+        self.logo_image = tk.PhotoImage(file="logo.png")
+        self.logo_label = ctk.CTkLabel(self, image=self.logo_image, text="")
         self.logo_label.pack(pady=20)
 
         self.exit_button = ctk.CTkButton(self, text="Exit", command=self.exit_app)
@@ -201,7 +194,7 @@ class FinalPage(ctk.CTkFrame):
         webbrowser.open("https://example.com/maibloom")
 
 if __name__ == "__main__":
-    ctk.set_appearance_mode("light")    # Or "dark", according to your preference
+    ctk.set_appearance_mode("light")
     ctk.set_default_color_theme("blue")
     app = App()
     app.mainloop()
