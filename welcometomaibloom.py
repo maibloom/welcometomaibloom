@@ -1,12 +1,11 @@
 import sys
-import subprocess
 import webbrowser
 from PyQt5.QtWidgets import (
     QApplication, QWizard, QWizardPage, QVBoxLayout, QHBoxLayout,
-    QLabel, QCheckBox, QPushButton, QMessageBox, QInputDialog, QLineEdit
+    QLabel, QCheckBox, QPushButton, QMessageBox, QInputDialog, QLineEdit, QTextEdit
 )
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QProcess, QTimer
 
 CMD_MAPPING = {
     "Education": "sudo -S omnipkg put install maibloom-edupackage",
@@ -38,53 +37,59 @@ class CommandPage(QWizardPage):
     def __init__(self):
         super().__init__()
         self.setTitle("Executing Commands")
-        self.setSubTitle("The selected commands will now execute.")
+        self.setSubTitle("Selected commands will execute and output will be shown in real time.")
         layout = QVBoxLayout()
-        self.status_label = QLabel("Preparing to run commands...")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.status_label)
+        self.output_view = QTextEdit()
+        self.output_view.setReadOnly(True)
+        layout.addWidget(self.output_view)
         self.setLayout(layout)
-    
+        self.process = None
+        self.command_list = []
+        self.current_command_index = 0
+        self.password = None
+
     def initializePage(self):
         wizard = self.wizard()
-        commands = []
+        self.command_list = []
         for option, cb in wizard.page(0).checkboxes.items():
             if cb.isChecked():
-                commands.append(CMD_MAPPING[option])
-        if commands:
-            sudo_password, ok = QInputDialog.getText(
+                self.command_list.append(CMD_MAPPING[option])
+        if self.command_list:
+            self.password, ok = QInputDialog.getText(
                 self, "Sudo Password", "Please enter your sudo password:",
                 QLineEdit.Password
             )
-            if not ok or not sudo_password:
-                self.status_label.setText("Sudo password not provided. Aborting execution.")
+            if not ok or not self.password:
+                self.output_view.setPlainText("Sudo password not provided. Aborting execution.")
                 return
         else:
-            self.status_label.setText("No options were selected. Nothing to execute.")
+            self.output_view.setPlainText("No options were selected. Nothing to execute.")
             return
 
-        output_lines = []
-        for cmd in commands:
-            try:
-                proc = subprocess.Popen(
-                    cmd, shell=True,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                out, err = proc.communicate(sudo_password + "\n")
-                if out.strip():
-                    output_lines.append(out.strip())
-                elif err.strip():
-                    output_lines.append(err.strip())
-            except Exception as e:
-                output_lines.append(f"Error executing '{cmd}': {e}")
-        
-        if output_lines:
-            self.status_label.setText("Executed commands:\n" + "\n".join(output_lines))
-        else:
-            self.status_label.setText("Commands executed, but no output was returned.")
+        self.current_command_index = 0
+        QTimer.singleShot(100, self.execute_next_command)
+
+    def execute_next_command(self):
+        if self.current_command_index >= len(self.command_list):
+            self.output_view.append("\nAll commands executed.")
+            return
+        cmd = self.command_list[self.current_command_index]
+        self.output_view.append(f"\nExecuting: {cmd}\n")
+        self.process = QProcess(self)
+        self.process.setProcessChannelMode(QProcess.MergedChannels)
+        self.process.readyRead.connect(self.handle_output)
+        self.process.finished.connect(self.command_finished)
+        self.process.started.connect(lambda: self.process.write((self.password + "\n").encode()))
+        self.process.start(cmd)
+
+    def handle_output(self):
+        data = self.process.readAllStandardOutput().data().decode("utf-8")
+        self.output_view.append(data)
+
+    def command_finished(self, exitCode, exitStatus):
+        self.output_view.append(f"\nFinished: {self.command_list[self.current_command_index]}\n")
+        self.current_command_index += 1
+        self.execute_next_command()
 
 class FinalPage(QWizardPage):
     def __init__(self):
