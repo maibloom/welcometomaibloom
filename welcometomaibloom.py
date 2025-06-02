@@ -16,10 +16,10 @@ CMD_MAPPING = {
 
 OUTPUT_MAPPING = {
     "Education": "maibloom-edupackage",
-    "Programming": "maibloom-devpackages",
-    "Office": "maibloom-officepackages",
-    "Daily Use": "maibloom-dailypackages",
-    "Gaming": "maibloom-gamingpackages"
+    "Programming": "maibloom-devpackage",
+    "Office": "maibloom-officepackage",
+    "Daily Use": "maibloom-dailypackage",
+    "Gaming": "maibloom-gamingpackage"
 }
 
 class IntroPage(QWizardPage):
