@@ -2,7 +2,7 @@
 Type=Application
 Name=Welcome to Mai BloomOS
 Comment=A walk through Mai Bloom OS
-Exec=python /usr/local/bin/welcometomaibloom/welcometomaibloom.py
+Exec=pypippark run /usr/local/bin/welcometomaibloom/welcometomaibloom.py
 Icon=/usr/local/bin/welcometomaibloom/logo.png
 Terminal=false
 Categories=Utility;Application;
