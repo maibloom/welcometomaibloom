@@ -302,7 +302,7 @@ def main():
 
     wizard = QWizard()
     wizard.setWindowTitle("Mai Bloom OS Setup")
-    wizard.setWindowIcon(QIcon(load_pixmap("logo.png", (32,32)))) # Use loaded pixmap for icon too
+    wizard.setWindowIcon(QIcon(load_pixmap("/usr/local/bin/welcometomaibloom/logo.png", (32,32)))) # Use loaded pixmap for icon too
 
     # Adding pages and storing their IDs if needed for navigation (page IDs are 0, 1, 2...)
     intro_page_id = wizard.addPage(IntroPage())
