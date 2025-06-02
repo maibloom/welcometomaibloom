@@ -7,11 +7,11 @@ import queue
 
 # Mapping for output names.
 OUTPUT_MAPPING = {
-    "Education": "maibloom-edupackages",
-    "Programming": "maibloom-edupackages",
-    "Office": "maibloom-edupackages",
-    "Daily Use": "maibloom-edupackages",
-    "Gaming": "maibloom-edupackages"
+    "Education": "maibloom-edupackage",
+    "Programming": "maibloom-edupackage",
+    "Office": "maibloom-edupackage",
+    "Daily Use": "maibloom-edupackage",
+    "Gaming": "maibloom-edupackage"
 }
 
 class App(ctk.CTk):
@@ -157,7 +157,7 @@ class CommandPage(ctk.CTkFrame):
             return
 
         packages_str = " ".join(selected_options)
-        self.command = f"sudo -S omnipkg put installed {packages_str}"
+        self.command = f"sudo -S omnipkg put install {packages_str}"
         self.text_output.insert(tk.END, f"Executing: {self.command}\n")
         self.password = simpledialog.askstring("Sudo Password", "Please enter your sudo password:", show="*")
         if not self.password:
