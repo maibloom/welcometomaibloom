@@ -64,7 +64,7 @@ class CommandPage(QWizardPage):
             return
 
         package_str = " ".join(selected_packages)
-        full_command = f"sudo -S omnipkg put installed {package_str}"
+        full_command = f"sudo -S omnipkg put install {package_str}"
         self.output_view.append(f"Executing: {full_command}\n")
         self.password, ok = QInputDialog.getText(
             self, "Sudo Password", "Please enter your sudo password:", QLineEdit.Password)
