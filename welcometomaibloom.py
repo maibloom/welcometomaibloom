@@ -60,7 +60,7 @@ class IntroPage(ctk.CTkFrame):
         self.title_label.pack(pady=10)
         self.subtitle_label = ctk.CTkLabel(
             self,
-            text="Select the packages you want to install based on your daily needs:",
+            text="Which of the following are you going to use your device for?",
             font=("Arial", 14)
         )
         self.subtitle_label.pack(pady=10)
